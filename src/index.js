@@ -1,5 +1,5 @@
 const  express = require('express')
-const { uuid } = require('uuidv4')
+const { uuid, isUuid } = require('uuidv4')
 const app = express()
 
 
@@ -10,9 +10,56 @@ const allProjects  = [];
 
 
 
+function middlewares(requeste , response, next){
+    
+    
+    const { url , method } = requeste
+    
+    const  logtabel = `[${method.toUpperCase()} , ${url}]`
+    
+    console.time(logtabel)
+    
+    
+    next()
+    
+    console.timeEnd(logtabel)
+    
+}
+
+
+
+function verifyId(requeste, response,  next) {
+
+    const { id } = requeste.params
+
+    const valueId  = allProjects.find(project => project.id == id)
+
+
+    
+    if(!isUuid(id)) {
+        return response.status(400).json({error : "Invalid project Id"})
+    }
+
+    return next()
+ 
+}
+
+app.use('/projects/:id', middlewares, verifyId)
+
+
+
+
 app.get('/projects', (requeste, response) => {
  
- return response.json(allProjects)
+
+    // fazendo filtro com  o methodo  http == queryparams ( ?filtro=term&page=2)
+
+    const { owner } = requeste.query
+
+    const  filtered = owner ? allProjects.filter(outhor => outhor.owner.includes(owner)) 
+    : allProjects
+
+    return response.json(filtered)
 })
 
 
@@ -23,12 +70,11 @@ app.post('/projects' , (requeste, response) =>{
 
     const id  = uuid()
 
-    console.log(owner)
+
     allProjects.push( {
         id,
         nameProject,
         owner
-        
     }
 
 
@@ -86,5 +132,5 @@ app.delete('/projects/:id' , (requeste, response) =>{
 
 
 app.listen(3333, ()=> {
-    console.log('Server  is started! 🚀🚀') 
+    console.log('🚀 Server  is started! ') 
 }) 
